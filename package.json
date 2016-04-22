@@ -1,0 +1,19 @@
+{
+  "name": "transitionable",
+  "version": "0.1.0",
+  "description": "jquery plugin for simple slideshow with sliding or fading effect",
+  "main": "jquery.transitionable.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fabmlk/transitionable.git"
+  },
+  "author": "fabien lanoux",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fabmlk/transitionable/issues"
+  },
+  "homepage": "https://github.com/fabmlk/transitionable#readme"
+}
