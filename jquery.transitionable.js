@@ -15,7 +15,8 @@
  *  
  *  Options:
  *      - loop: boolean true|false. If next is called when there are not next sibling in the DOM, the default is looping back to the previous element (default: true)
- *      - effect: string "fade"|"slide". If no effect is specified when doing the transition, defaults to "fade" for fading.
+ *      - effect: string "fade"|"slide" or null. If no effect is specified when doing the transition, defaults to the one specified.
+ *          By default, null is applied indicating we don't apply any effects.
  *      - fadeDuration: integer. Number of miliseconds for the fading effect. Defaults to jquery default (400ms).
  *      - slideDuration: integer. Numbert of miliseconds for the sliding effect. Defaults to jquery default (400ms).
  *      
@@ -61,7 +62,7 @@
     // Create the defaults once
     var defaults = {
         loop: true, // allow looping when end is bound limit is reached
-        effect: "fade", // default effect
+        effect: null, // default effect
         fadeDuration: $.fx.speeds._default, // default fading duration
         slideDuration: $.fx.speeds._default // default sliding duration
     },
@@ -167,6 +168,12 @@
                         done: complete,
                         duration: this.options.slideDuration
                     });
+                    break;
+                
+                default:
+                    children.css("left", 0);
+                    target.show();
+                    elt.hide();
                     break;
             }
         },
