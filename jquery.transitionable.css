@@ -1,0 +1,13 @@
+.wrapper-fab-transitionable {
+    position: relative;
+    overflow: hidden;
+}
+
+.wrapper-fab-transitionable > * {
+    display: block;
+    position: absolute;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    top: 0;
+}
