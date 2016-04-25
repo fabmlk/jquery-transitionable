@@ -1,5 +1,5 @@
 {
-  "name": "transitionable",
+  "name": "jquery-transitionable",
   "version": "0.1.0",
   "description": "jquery plugin for simple slideshow with sliding or fading effect",
   "main": "jquery.transitionable.js",
