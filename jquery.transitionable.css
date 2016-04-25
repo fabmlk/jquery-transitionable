@@ -3,11 +3,44 @@
     overflow: hidden;
 }
 
-.wrapper-fab-transitionable > * {
+.page-fab-transitionable {
     display: block;
     position: absolute;
     overflow: hidden;
     height: 100%;
     width: 100%;
     top: 0;
+    left: 0;
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.page-fab-transitionable.left {
+    transform: translateX(-100%);
+}
+
+.page-fab-transitionable.center {
+    transform: translateX(0);
+}
+
+.page-fab-transitionable.right {
+    transform: translateX(100%);
+}
+
+.page-fab-transitionable.show {
+    opacity: 1;
+}
+
+.page-fab-transitionable.hide {
+    opacity: 0;
+}
+
+.page-fab-transitionable.slide-transition {
+    transition-property: transform;
+    transition-duration: .25s;
+}
+
+.page-fab-transitionable.fade-transition {
+    transition-property: opacity;
+    transition-duration: .25s;
 }
