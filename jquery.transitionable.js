@@ -83,6 +83,12 @@
 
     Transitionable.prototype = {
 
+        _getOwnEltClasses: function (elt) {
+            return elt.attr("class").split(" ").filter(function (cssclass) {
+                return cssclass.indexOf(pluginName) === -1;
+            }).join(" ");
+        },
+
         /**
          * Performs plugin initialization by keeping the width of the wrapper element (and adjusting it on resize)
          * and hide all other children but the first child.
@@ -135,15 +141,17 @@
             }
             
             var target = children.eq(this.index); // the actual element we are transitioning to
+            var ownTargetClasses = this._getOwnEltClasses(target);
+            var ownEltClasses = this._getOwnEltClasses(elt);
             
             // For any transition, once the effect is done we must have only 1 element visible (the others are hidden)
             switch (effect) {
                 // opacity transition
                 case "fade":
                     // set target to being visible but with 0 opacity
-                    target.attr("class", "page-" + pluginName + " hide").show();
+                    target.attr("class", ownTargetClasses + " page-" + pluginName + " hide-" + pluginName).show();
                     // set current element to 1 opacity
-                    elt.attr("class", "page-" + pluginName + " show");
+                    elt.attr("class", ownEltClasses + " page-" + pluginName + " show-" + pluginName);
                     
                     target.one('transitionend', function () {
                        elt.hide();
@@ -154,14 +162,14 @@
                     wrapper[0].offsetWidth;
                     
                     // execute opposite opacity transition on target and current
-                    target.attr("class", "page-" + pluginName + " fade-transition show");
-                    elt.attr("class", "page-" + pluginName + " fade-transition hide");
+                    target.attr("class", ownTargetClasses + " page-" + pluginName + " fade-transition-" + pluginName + " show-" + pluginName);
+                    elt.attr("class", ownEltClasses + " page-" + pluginName + " fade-transition-" + pluginName + " hide-" + pluginName);
                     break;
                     
                 // translateX transition
                 case "slide":
                     // set target to its starting position offset and visible
-                    target.attr("class", "page-" + pluginName + " " + (direction === "next" ? "right" : "left")).show();
+                    target.attr("class", ownTargetClasses + " page-" + pluginName + " " + (direction === "next" ? "right-" + pluginName : "left-" + pluginName)).show();
                     
                     target.one('transitionend', function () {
                         elt.hide();
@@ -172,14 +180,14 @@
                     wrapper[0].offsetWidth;
                     
                     // execute opposite translation along X-axis on target and current
-                    target.attr("class", "page-" + pluginName +  " slide-transition center");
-                    elt.attr("class", "page-" + pluginName + " slide-transition " + (direction === "next" ? "left" : "right"));
+                    target.attr("class", ownTargetClasses + " page-" + pluginName +  " slide-transition-" + pluginName + " center-" + pluginName);
+                    elt.attr("class", ownEltClasses + " page-" + pluginName + " slide-transition-" + pluginName + " " + (direction === "next" ? "left-" + pluginName : "right-" + pluginName));
                     break;
                 
                 // no transition: immediate hide/show
                 default:
-                    target.attr("class", "page-" + pluginName).show();
-                    elt.attr("class", "page-" + pluginName).hide();
+                    target.attr("class", ownTargetClasses + " page-" + pluginName).show();
+                    elt.attr("class", ownEltClasses + " page-" + pluginName).hide();
                     complete();
                     break;
             }
@@ -212,7 +220,7 @@
             this.element.removeData(dataKey)
                     .removeClass("wrapper-" + pluginName)
                     .children()
-                        .removeClass("page-" + pluginName + " hide show center left right slide-transition fade-transition");
+                        .removeClass("page-" + pluginName + " hide-" + pluginName + " show-" + pluginName + " center-" + pluginName + " left-" + pluginName + " right-" + pluginName + " slide-transition-" + pluginName + " fade-transition-" + pluginName);
         }
     };
 
