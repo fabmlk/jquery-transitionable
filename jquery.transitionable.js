@@ -9,14 +9,15 @@
  * Effects supported:
  *  - fading : one element transition to the prev/next with the same fading effect
  *  - sliding: like a page navigation, one element transition to the next by sliding from right to left,
- *          or to the previous by sliding from left to right.
+ *          or to the previous by sliding from left to right or similarly with up/down.
  *          
  *  Next & prev methods can be passed a callback to execute when the transition is complete.
  *  
  *  Options:
  *      - loop: boolean true|false. If next is called when there are not next sibling in the DOM, the default is looping back to the previous element (default: true)
  *      - effect: string "fade"|"slide" or null. If no effect is specified when doing the transition, defaults to the one specified.
- *          By default, null is applied indicating we don't apply any effects.
+ *          By default, null is applied indicating we don't apply any effects (default: null).
+ *      - direction: string "horizontal"|"vertical" meaning respectively transition from right/left or up/down (only applies if effect is "slide") (default: horizontal).
  *      
  * Event:
  *      - fab-transitionablebeforeloop: when a call to next or prev leads to a loop to the opposite element, this event is fired.
@@ -45,6 +46,8 @@
  * 
  * Inspiration: https://github.com/ccoenraets/PageSlider
  *
+ * TODO: implement setOption() method to easily switch direction. Right now, no option can be overriden once plugin attached.
+ *
  * @author Lanoux Fabien
  */
 
@@ -67,6 +70,7 @@
     var defaults = {
         loop: true, // allow looping when end is bound limit is reached
         effect: null, // default effect
+        direction: "horizontal" // default direction along X-axis
     },
         pluginName = 'fab-transitionable',
         dataKey = 'plugin-' + pluginName // data key keeping the instance of the plugin to the wrapper element
@@ -77,12 +81,46 @@
         this.element = element;
 
         this.options = $.extend( {}, defaults, options) ;
+        if (["horizontal", "vertical"].indexOf(this.options.direction) === -1) {
+            throw new Error("Invalid option direction: " + this.options.direction + ". Must be 'horizontal' or 'vertical'.");
+        }
+        if (["slide", "fade", null].indexOf(this.options.effect) === -1) {
+            throw new Error("Invalid option effect: " + this.options.effect + ". Must be 'slide' or 'fade' or null.");
+        }
 
         this.init();
     };
 
     Transitionable.prototype = {
+        /**
+         * Helper function to return relevant transition class from the navigation and direction
+         * @param navigation
+         * @param direction
+         * @param opposite (default: false) if we have to invert the results along current direction axis
+         * @returns {string} the class name
+         * @private
+         */
+        _returnClassFromNavigationAndDirection: function (navigation, direction, opposite) {
+            opposite = opposite || false;
+            if (direction === "horizontal" && navigation === "next") {
+                return opposite ? "left-" + pluginName : "right-" + pluginName;
+            }
+            if (direction === "horizontal" && navigation === "prev") {
+                return opposite ? "right-" + pluginName : "left-" + pluginName;
+            }
+            if (direction === "vertical" && navigation === "next") {
+                return opposite ? "up-" + pluginName : "down-" + pluginName;
+            }
+            return opposite ? "down-" + pluginName : "up-" + pluginName;
+        },
 
+        /**
+         * Helper function to return all current custom classes of an element
+         * (ignoring this plugin-specific classes)
+         * @param elt the element to extract classes from
+         * @returns {string} custom classes of elt separated by space (ready to reinsert as is)
+         * @private
+         */
         _getOwnEltClasses: function (elt) {
             return elt.attr("class").split(" ").filter(function (cssclass) {
                 return cssclass.indexOf(pluginName) === -1;
@@ -99,34 +137,45 @@
         
             wrapper.addClass("wrapper-" + pluginName);
             this.index = 0;
+            this.earlyReturn = false; // we will need this to detect if we're ready to perform the transition in case the javascript and css go out of sync
 
             children.addClass("page-" + pluginName).not(":eq(0)").hide();
         },
         
         /**
-         * Performs the actual transition using jquery animation.
+         * Performs the actual transition using css transitions.
          * 
-         * @param {string} direction "prev"|"next"
-         * @param {string} effect (optional) "slide"|"fade"|callback
-         * @param {function} complete (optional) - the callback to call when the transition is finished
+         * @param {string} navigation "prev"|"next"
+         * @param {string} effect (optional) "slide"|"fade" (default instance option or else global default option)
+         * @param {function} complete (optional) - the callback to call when the transition is finished (default instance option or else global default option)
          */
-        _navigate: function (direction, effect, complete) {
+        _navigate: function (navigation, effect, complete) {
+            // if has not finished transitioning, stop right there
+            if (this.earlyReturn === true) {
+                return;
+            }
+            this.earlyReturn = true;
+
+
             var wrapper = this.element,
                 children = wrapper.children(),
                 elt = children.eq(this.index),
-                beforeLoopEvent = $.Event(pluginName + "beforeloop")
+                beforeLoopEvent = $.Event(pluginName + "beforeloop"),
+                that = this
                 ;
-            
-            if (typeof effect === "function") {
-                complete = effect;
+            // some argument checks
+            if (["next", "prev"].indexOf(navigation) === -1) { // we passed direction in place of navigation, shift arguments
+                navigation = "next"; // arbitrary default
+            }
+            if (["slide", "fade"].indexOf(effect) === -1) {
                 effect = this.options.effect;
             }
-            complete = complete || $.noop;
+            complete = (typeof complete === "function" ? complete : $.noop);
         
             beforeLoopEvent.target = this.element; // to support delegated events
             
-            // if we're about to loop, trigger beforeloop event and continue is not prevented or options.loop is false
-            if (direction === "next" && this.index === children.length - 1 || direction === "prev" && this.index === 0) {
+            // if we're about to loop, trigger beforeloop event and continue if not prevented or options.loop is false
+            if (navigation === "next" && this.index === children.length - 1 || navigation === "prev" && this.index === 0) {
                 wrapper.trigger(beforeLoopEvent);
                 if (this.options.loop === false || beforeLoopEvent.isDefaultPrevented()) {
                     return;
@@ -134,7 +183,7 @@
             }
             
             // calculate the index of the element we are transitioning to
-            if (direction === "next") {
+            if (navigation === "next") {
                 this.index = (this.index + 1) % children.length;
             } else {
                 this.index = (this.index === 0 ? children.length - 1 : this.index - 1);
@@ -154,8 +203,9 @@
                     elt.attr("class", ownEltClasses + " page-" + pluginName + " show-" + pluginName);
                     
                     target.one('transitionend', function () {
-                       elt.hide();
-                       complete();
+                        elt.hide();
+                        complete();
+                        that.earlyReturn = false;
                     });
                     
                     // Force reflow. More information here: http://www.phpied.com/rendering-repaint-reflowrelayout-restyle/
@@ -169,11 +219,14 @@
                 // translateX transition
                 case "slide":
                     // set target to its starting position offset and visible
-                    target.attr("class", ownTargetClasses + " page-" + pluginName + " " + (direction === "next" ? "right-" + pluginName : "left-" + pluginName)).show();
+                    target.attr("class", ownTargetClasses + " page-" + pluginName + " "
+                        + this._returnClassFromNavigationAndDirection(navigation, this.options.direction))
+                        .show();
                     
-                    target.one('transitionend', function () {
+                    target.one('transitionend', function (event) {
                         elt.hide();
                         complete();
+                        that.earlyReturn = false;
                     });
                     
                     // Force reflow. More information here: http://www.phpied.com/rendering-repaint-reflowrelayout-restyle/
@@ -181,7 +234,8 @@
                     
                     // execute opposite translation along X-axis on target and current
                     target.attr("class", ownTargetClasses + " page-" + pluginName +  " slide-transition-" + pluginName + " center-" + pluginName);
-                    elt.attr("class", ownEltClasses + " page-" + pluginName + " slide-transition-" + pluginName + " " + (direction === "next" ? "left-" + pluginName : "right-" + pluginName));
+                    elt.attr("class", ownEltClasses + " page-" + pluginName + " slide-transition-" + pluginName + " "
+                        + this._returnClassFromNavigationAndDirection(navigation, this.options.direction, true)); // opposite = true
                     break;
                 
                 // no transition: immediate hide/show
@@ -195,7 +249,7 @@
 
         /**
          * Convenient method for direct invocation to go next
-         * @param {string} effect "slide"|"fade"
+         * @param {string} effect "slide"|"fade" (optional)
          * @param {function} complete (optional)
          * @returns {undefined}
          */
@@ -205,7 +259,7 @@
         
         /**
          * Convenient method for direct invocation to go previous
-         * @param {string} effect "slide"|"fade"
+         * @param {string} effect "slide"|"fade" (optional)
          * @param {function} complete (optional)
          * @returns {undefined}
          */
@@ -218,9 +272,14 @@
          */
         destroy: function () {
             this.element.removeData(dataKey)
-                    .removeClass("wrapper-" + pluginName)
-                    .children()
-                        .removeClass("page-" + pluginName + " hide-" + pluginName + " show-" + pluginName + " center-" + pluginName + " left-" + pluginName + " right-" + pluginName + " slide-transition-" + pluginName + " fade-transition-" + pluginName);
+                .removeClass("wrapper-" + pluginName)
+                .children().show()
+                    .removeClass(["page-" + pluginName, "hide-" + pluginName,
+                        "show-" + pluginName, "center-" + pluginName,
+                        "left-" + pluginName, "right-" + pluginName,
+                        "up-" + pluginName, "down-" + pluginName,
+                        "slide-transition-" + pluginName, "fade-transition-" + pluginName
+                    ].join(" "));
         }
     };
 
@@ -239,7 +298,6 @@
         } else {
             plugin = new Transitionable(this, options);
             this.data(dataKey, plugin);
-            plugin.init(options);
         }
         return plugin;
     };

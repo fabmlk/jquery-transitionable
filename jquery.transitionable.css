@@ -11,7 +11,7 @@
     width: 100%;
     top: 0;
     left: 0;
-    transform: translateX(0);
+    transform: translateX(0) translateY(0);
     opacity: 1;
 }
 
@@ -19,12 +19,20 @@
     transform: translateX(-100%);
 }
 
+.page-fab-transitionable.down-fab-transitionable {
+    transform: translateY(100%);
+}
+
 .page-fab-transitionable.center-fab-transitionable {
-    transform: translateX(0);
+    transform: translateX(0) translateY(0);
 }
 
 .page-fab-transitionable.right-fab-transitionable {
     transform: translateX(100%);
+}
+
+.page-fab-transitionable.up-fab-transitionable {
+    transform: translateY(-100%);
 }
 
 .page-fab-transitionable.show-fab-transitionable {

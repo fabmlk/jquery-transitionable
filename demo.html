@@ -5,10 +5,16 @@
 	<script src="jquery.transitionable.js"></script>
 	<link href="jquery.transitionable.css" type="text/css" rel="stylesheet">
 </head>
-<div style="width:500px; height:400px">
-	<div>A</div>
-	<div>B</div>
-	<div>C</div>
+<pre style="white-space: pre-wrap">Open dev tools and type in console:
+	var transContainer = $(".container").transitionable();
+	transContainer.next("slide");
+	transContainer.prev("fade");
+	etc...
+</pre>
+<div class="container" style="width:500px; height:400px; color: white">
+	<div style="background-color: blue">A</div>
+	<div style="background-color: green">B</div>
+	<div style="background-color: red">C</div>
 </div>
 </head>
 <body></body>
