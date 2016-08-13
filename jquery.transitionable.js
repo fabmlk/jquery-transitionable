@@ -243,6 +243,7 @@
                     target.attr("class", ownTargetClasses + " page-" + pluginName).show();
                     elt.attr("class", ownEltClasses + " page-" + pluginName).hide();
                     complete();
+                    that.earlyReturn = false;
                     break;
             }
         },
