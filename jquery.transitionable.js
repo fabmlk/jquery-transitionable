@@ -163,14 +163,25 @@
                 beforeLoopEvent = $.Event(pluginName + "beforeloop"),
                 that = this
                 ;
-            // some argument checks
-            if (["next", "prev"].indexOf(navigation) === -1) { // we passed direction in place of navigation, shift arguments
+
+            // some argument checks and common jquery pattern to accept callback at any position in arguments list
+            if (typeof navigation === "function") {
+                complete = navigation;
                 navigation = "next"; // arbitrary default
-            }
-            if (["slide", "fade"].indexOf(effect) === -1) {
                 effect = this.options.effect;
+            } else if(typeof effect === "function") {
+                complete = effect;
+                effect = navigation;
+                navigation = "next";
+            } else {
+                if (["next", "prev"].indexOf(navigation) === -1) { // we passed direction in place of navigation, shift arguments
+                    navigation = "next"; // arbitrary default
+                }
+                if (["slide", "fade"].indexOf(effect) === -1) {
+                    effect = this.options.effect;
+                }
+                complete = (typeof complete === "function" ? complete : $.noop);
             }
-            complete = (typeof complete === "function" ? complete : $.noop);
         
             beforeLoopEvent.target = this.element; // to support delegated events
             
