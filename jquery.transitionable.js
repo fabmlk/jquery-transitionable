@@ -5,13 +5,14 @@
  * 
  * Given an element, this plugin converts all its direct children as being transitionable like a slideshow.
  * I wanted simple "next/prev" methods to be called to transition from the current element to the next/previous sibliing.
- * It does not support continous transitions in time: the transition must be called manually.
+ * It does not support continous transitions in time: the transition must be called manually (for an automatic slideshow, simply use setInterval).
  * Effects supported:
  *  - fading : one element transition to the prev/next with the same fading effect
  *  - sliding: like a page navigation, one element transition to the next by sliding from right to left,
  *          or to the previous by sliding from left to right or similarly with up/down.
  *          
  *  Next & prev methods can be passed a callback to execute when the transition is complete.
+ *  To navigate to an element directly, a matching selector can be used.
  *  
  * Options:
  *      - loop: boolean true|false. If next is called when there are not next sibling in the DOM, the default is looping back to the previous element (default: true)
@@ -24,7 +25,7 @@
  *                                      The user can cancel the loop effect by returning false.
  *
  * Classes:
- *      - skip-fab-transitionable: when an element has this class applied, it will be skipped in the navigation
+ *      - skip-fab-transitionable: when an element has this class applied, it will be skipped in the navigation.
  *                                      
  * By default, timing animation is set to 0.25s in the accompanying stylesheet.
  * To override the default, simply add a CSS rule that override transition-duration property of the rules .page-fab-transitionable.slide-transition 
@@ -150,9 +151,10 @@
          * 
          * @param {string} navigation "prev"|"next"
          * @param {string} effect (optional) "slide"|"fade" (default instance option or else global default option)
+         * @param {string} selector (optional) a selector matching a given page to go to directly
          * @param {function} complete (optional) - the callback to call when the transition is finished (default instance option or else global default option)
          */
-        _navigate: function (navigation, effect, complete) {
+        _navigate: function (navigation, effect, selector, complete) {
             // if has not finished transitioning, stop right there
             if (this.earlyReturn === true) {
                 return;
@@ -164,6 +166,7 @@
                 children = wrapper.children(),
                 elt = children.eq(this.index),
                 beforeLoopEvent = $.Event(pluginName + "beforeloop"),
+                newindex = -1,
                 that = this
                 ;
 
@@ -174,36 +177,53 @@
                 effect = this.options.effect;
             } else if(typeof effect === "function") {
                 complete = effect;
-                effect = navigation;
-                navigation = "next";
-            } else {
-                if (["next", "prev"].indexOf(navigation) === -1) { // we passed direction in place of navigation, shift arguments
-                    navigation = "next"; // arbitrary default
-                }
-                if (["slide", "fade"].indexOf(effect) === -1) {
-                    effect = this.options.effect;
-                }
-                complete = (typeof complete === "function" ? complete : $.noop);
+                effect = this.options.effect;
             }
+
+            if (["next", "prev"].indexOf(navigation) === -1) {
+                navigation = "next"; // arbitrary default
+            }
+            if (["slide", "fade"].indexOf(effect) === -1) {
+                effect = this.options.effect;
+            }
+            complete = (typeof complete === "function" ? complete : $.noop);
+
+            // if no selector is passed, the clever default is to target all pages
+            selector = selector || ".page-" + pluginName;
         
             beforeLoopEvent.target = this.element; // to support delegated events
-            
+
+
+            // Calculate the index of the element we are transitioning to.
+            // It takes into account selector and presence of "skip-" classes.
+            // Note: This is not the most efficient solution but the easiest to implement.
+            if (navigation === "next") {
+                newindex = elt.nextAll(selector).not(".skip-" + pluginName).first().index();
+                if (newindex === -1) { // loop to first match
+                    newindex = children.filter(selector).not(".skip-" + pluginName).first().index();
+                }
+            } else {
+                newindex = elt.prevAll(selector).not(".skip-" + pluginName).first().index();
+                if (newindex === -1) { // loop to last match
+                    newindex = children.filter(selector).not(".skip-" + pluginName).last().index();
+                }
+            }
+
+            if (newindex === -1 || newindex === this.index) { // everything is skipped or nothing is matched goddamn it! do nothing
+                this.earlyReturn = false;
+                return;
+            }
+
             // if we're about to loop, trigger beforeloop event and continue if not prevented or options.loop is false
-            if (navigation === "next" && this.index === children.length - 1 || navigation === "prev" && this.index === 0) {
+            if (navigation === "next" && newindex < this.index || navigation === "prev" && newindex > this.index) {
                 wrapper.trigger(beforeLoopEvent);
                 if (this.options.loop === false || beforeLoopEvent.isDefaultPrevented()) {
+                    this.earlyReturn = false;
                     return;
                 }
             }
-            
-            // calculate the index of the element we are transitioning to
-            if (navigation === "next") {
-                this.index = (this.index + elt.nextUntil(":not(.skip-" + pluginName + ")").length + 1) % children.length;
-            } else {
-                this.index = (this.index === 0 ?
-                      children.not(".skip-" + pluginName).last().index()
-                    : this.index - elt.prevUntil(":not(.skip-" + pluginName + ")").length - 1);
-            }
+
+            this.index = newindex;
             
             var target = children.eq(this.index); // the actual element we are transitioning to
             var ownTargetClasses = this._getOwnEltClasses(target);
@@ -267,21 +287,25 @@
         /**
          * Convenient method for direct invocation to go next
          * @param {string} effect "slide"|"fade" (optional)
+         * @param {string} selector (optional) which page we want to go to directly
          * @param {function} complete (optional)
-         * @returns {undefined}
+         * @returns {Object} plug instance for chaining
          */
-        next: function(effect, complete) {
-            return this._navigate("next", effect, complete);
+        next: function(effect, selector, complete) {
+            this._navigate("next", effect, selector, complete);
+            return this;
         },
         
         /**
          * Convenient method for direct invocation to go previous
          * @param {string} effect "slide"|"fade" (optional)
+         * @param {string} selector (optional) which page we want to go to directly
          * @param {function} complete (optional)
-         * @returns {undefined}
+         * @returns {Object} plug instance for chaining
          */
-        prev: function (effect, complete) {
-            return this._navigate("prev", effect, complete);
+        prev: function (effect, selector, complete) {
+            this._navigate("prev", effect, selector, complete);
+            return this;
         },
         
         /**
