@@ -13,7 +13,7 @@
  *          
  *  Next & prev methods can be passed a callback to execute when the transition is complete.
  *  
- *  Options:
+ * Options:
  *      - loop: boolean true|false. If next is called when there are not next sibling in the DOM, the default is looping back to the previous element (default: true)
  *      - effect: string "fade"|"slide" or null. If no effect is specified when doing the transition, defaults to the one specified.
  *          By default, null is applied indicating we don't apply any effects (default: null).
@@ -22,6 +22,9 @@
  * Event:
  *      - fab-transitionablebeforeloop: when a call to next or prev leads to a loop to the opposite element, this event is fired.
  *                                      The user can cancel the loop effect by returning false.
+ *
+ * Classes:
+ *      - skip-fab-transitionable: when an element has this class applied, it will be skipped in the navigation
  *                                      
  * By default, timing animation is set to 0.25s in the accompanying stylesheet.
  * To override the default, simply add a CSS rule that override transition-duration property of the rules .page-fab-transitionable.slide-transition 
@@ -195,9 +198,11 @@
             
             // calculate the index of the element we are transitioning to
             if (navigation === "next") {
-                this.index = (this.index + 1) % children.length;
+                this.index = (this.index + elt.nextUntil(":not(.skip-" + pluginName + ")").length + 1) % children.length;
             } else {
-                this.index = (this.index === 0 ? children.length - 1 : this.index - 1);
+                this.index = (this.index === 0 ?
+                      children.not(".skip-" + pluginName).last().index()
+                    : this.index - elt.prevUntil(":not(.skip-" + pluginName + ")").length - 1);
             }
             
             var target = children.eq(this.index); // the actual element we are transitioning to
