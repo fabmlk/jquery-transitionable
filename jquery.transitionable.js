@@ -175,9 +175,14 @@
                 complete = navigation;
                 navigation = "next"; // arbitrary default
                 effect = this.options.effect;
+                selector = ".page-" + pluginName;
             } else if(typeof effect === "function") {
                 complete = effect;
                 effect = this.options.effect;
+                selector = ".page-" + pluginName;
+            } else if (typeof selector === "function") {
+                complete = selector;
+                selector = ".page-" + pluginName;
             }
 
             if (["next", "prev"].indexOf(navigation) === -1) {
