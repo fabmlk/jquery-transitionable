@@ -143,7 +143,9 @@
             this.index = 0;
             this.earlyReturn = false; // we will need this to detect if we're ready to perform the transition in case the javascript and css go out of sync
 
-            children.addClass("page-" + pluginName).not(":eq(0)").hide();
+            // we will avoid the .show()/.hide() jquery functions in order to not mess with the display property that might
+            // be set to something relevant (other than block) by external style
+            children.addClass("page-" + pluginName).not(":eq(0)").css("display", "none");
         },
         
         /**
@@ -239,12 +241,12 @@
                 // opacity transition
                 case "fade":
                     // set target to being visible but with 0 opacity
-                    target.attr("class", ownTargetClasses + " page-" + pluginName + " hide-" + pluginName).show();
+                    target.attr("class", ownTargetClasses + " page-" + pluginName + " hide-" + pluginName).css("display", "");
                     // set current element to 1 opacity
                     elt.attr("class", ownEltClasses + " page-" + pluginName + " show-" + pluginName);
                     
                     target.one('transitionend', function () {
-                        elt.hide();
+                        elt.css("display", "none");
                         complete();
                         that.earlyReturn = false;
                     });
@@ -262,10 +264,10 @@
                     // set target to its starting position offset and visible
                     target.attr("class", ownTargetClasses + " page-" + pluginName + " "
                         + this._returnClassFromNavigationAndDirection(navigation, this.options.direction))
-                        .show();
+                        .css("display", "");
                     
                     target.one('transitionend', function (event) {
-                        elt.hide();
+                        elt.css("display", "none");
                         complete();
                         that.earlyReturn = false;
                     });
@@ -281,8 +283,8 @@
                 
                 // no transition: immediate hide/show
                 default:
-                    target.attr("class", ownTargetClasses + " page-" + pluginName).show();
-                    elt.attr("class", ownEltClasses + " page-" + pluginName).hide();
+                    target.attr("class", ownTargetClasses + " page-" + pluginName).css("display", "");
+                    elt.attr("class", ownEltClasses + " page-" + pluginName).css("display", "none");
                     complete();
                     that.earlyReturn = false;
                     break;
@@ -319,7 +321,7 @@
         destroy: function () {
             this.element.removeData(dataKey)
                 .removeClass("wrapper-" + pluginName)
-                .children().show()
+                .children().css("display", "")
                     .removeClass(["page-" + pluginName, "hide-" + pluginName,
                         "show-" + pluginName, "center-" + pluginName,
                         "left-" + pluginName, "right-" + pluginName,
