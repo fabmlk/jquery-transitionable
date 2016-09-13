@@ -218,6 +218,7 @@
 
             if (newindex === -1 || newindex === this.index) { // everything is skipped or nothing is matched goddamn it! do nothing
                 wrapper.trigger(beforeLoopEvent); // we choose to trigger the event as not moving can be considered looping
+                complete();
                 this.earlyReturn = false;
                 return;
             }
