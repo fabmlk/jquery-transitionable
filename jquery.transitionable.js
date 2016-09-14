@@ -137,15 +137,19 @@
          */
         init: function() {
             var wrapper = this.element,
-                children = wrapper.children();
+                children = wrapper.children(),
+                startElement = children.not(".skip-" + pluginName).filter(":first"); // starting point is first child that has not a ".skip" class applied
         
             wrapper.addClass("wrapper-" + pluginName);
-            this.index = 0;
+
+            this.index = startElement.index();
             this.earlyReturn = false; // we will need this to detect if we're ready to perform the transition in case the javascript and css go out of sync
 
+
             // we will avoid the .show()/.hide() jquery functions in order to not mess with the display property that might
-            // be set to something relevant (other than block) by external style
-            children.addClass("page-" + pluginName).not(":eq(0)").css("display", "none");
+            // be set to something relevant (other than block) by external style.
+            // we initially display-none all children except the start element
+            children.addClass("page-" + pluginName).not(startElement).css("display", "none");
         },
         
         /**
