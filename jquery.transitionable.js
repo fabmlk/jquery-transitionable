@@ -347,7 +347,7 @@
                 if (!plugin[options]) {
                     throw 'Unkown method: ' + options;
                 }
-                plugin[options].apply(plugin, Array.prototype.slice.call(arguments, 1));
+                return plugin[options].apply(plugin, Array.prototype.slice.call(arguments, 1));
             }
         } else {
             plugin = new Transitionable(this, options);
