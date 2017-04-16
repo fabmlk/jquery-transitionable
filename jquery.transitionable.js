@@ -202,7 +202,7 @@
             // if no selector is passed, the clever default is to target all pages
             selector = selector || ".page-" + pluginName;
         
-            beforeLoopEvent.target = this.element; // to support delegated events
+            beforeLoopEvent.target = this.element[0]; // to support delegated events
 
 
             // Calculate the index of the element we are transitioning to.
